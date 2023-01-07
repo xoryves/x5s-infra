@@ -1,0 +1,8 @@
+= xoryves infrastructure
+
+Different parts of my private infrastructure automatization.
+I find it very interesting and inspiring how other people/organizations/projects manage their infrastructure.
+For example Void Linux has https://infradocs.voidlinux.org/[InfraDocs] and https://github.com/void-linux/void-infrastructure[void-infrastructure].
+So I wanted to share my way too.
+
+For german readers there is more information at https://xoryves.de/tags/x5s-infra/[xoryves.de].
