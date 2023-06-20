@@ -3,3 +3,4 @@ venv
 .vault_pass
 __pycache__
 ansible/host_vars/*/vault
+.DS_Store
