@@ -1,0 +1,5 @@
+---
+- name: Restart sshd
+  community.general.runit:
+    name: sshd
+    state: restarted

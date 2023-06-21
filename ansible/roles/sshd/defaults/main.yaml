@@ -1,0 +1,8 @@
+---
+sshd:
+  port: 65535
+  permit_root_login: prohibit-password
+  pubkey_authentication: 'yes'
+  password_authentication: 'no'
+  permit_empty_passwords: 'no'
+  use_pam: 'no'
