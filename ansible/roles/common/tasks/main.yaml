@@ -1,0 +1,21 @@
+---
+- name: Install chrony
+  community.general.xbps:
+    name: chrony
+    state: present
+- name: Enable and start chrony
+  community.general.runit:
+    name: chronyd
+    state: started
+    enabled: true
+- name: Configure lastlog
+  ansible.builtin.file:
+    path: /var/log/lastlog
+    state: touch
+    group: utmp
+    mode: '0664'
+- name: ZFS Kernel Snapshots
+  ansible.builtin.copy:
+    src: 10-kernel-clean
+    dest: /etc/kernel.d/pre-install/10-kernel-clean
+    mode: '0755'
