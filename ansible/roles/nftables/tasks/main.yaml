@@ -1,0 +1,17 @@
+---
+- name: Install nftables
+  community.general.xbps:
+    name: nftables
+    state: present
+- name: Copy nftables.conf
+  ansible.builtin.template:
+    src: nftables.conf
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: '0644'
+- name: Enable and start nftables
+  community.general.runit:
+    name: nftables
+    state: started
+    enabled: true
