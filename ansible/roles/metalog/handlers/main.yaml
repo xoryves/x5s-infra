@@ -1,0 +1,14 @@
+---
+- name: Assemble metalog.conf
+  ansible.builtin.assemble:
+    src: /etc/metalog.conf.d
+    dest: /etc/metalog.conf
+    owner: root
+    group: root
+    mode: '0644'
+  listen: Reload metalog
+
+- name: Reload metalog
+  community.general.runit:
+    name: metalog
+    state: reloaded

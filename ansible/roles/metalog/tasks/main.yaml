@@ -1,0 +1,37 @@
+- name: Metalog
+  tags: [metalog]
+  block:
+    - name: Install metalog
+      community.general.xbps:
+        name: metalog
+    - name: Create metalog.conf.d
+      ansible.builtin.file:
+        path: /etc/metalog.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Copy init metalog.conf
+      ansible.builtin.copy:
+        src: metalog.conf
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+        force: false
+      loop:
+        - /etc/metalog.conf
+        - /etc/metalog.conf.d/metalog.conf
+    - name: Copy metalog.conf
+      ansible.builtin.copy:
+        src: metalog.conf
+        dest: /etc/metalog.conf.d/metalog.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload metalog
+    - name: Enable and start metalog
+      community.general.runit:
+        name: metalog
+        state: started
+        enabled: true
