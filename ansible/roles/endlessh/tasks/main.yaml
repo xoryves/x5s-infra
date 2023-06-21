@@ -1,0 +1,76 @@
+---
+- name: Create group
+  ansible.builtin.group:
+    name: endlessh
+    gid: 10100
+    system: true
+- name: Create user
+  ansible.builtin.user:
+    name: endlessh
+    uid: 10100
+    group: endlessh
+    home: /tmp
+    system: true
+- name: Copy endlessh
+  ansible.builtin.copy:
+    src: endlessh
+    dest: /usr/local/bin/endlessh
+    owner: root
+    group: root
+    mode: '0755'
+- name: Create /etc/endlessh
+  ansible.builtin.file:
+    path: /etc/endlessh
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Copy config
+  ansible.builtin.copy:
+    src: config
+    dest: /etc/endlessh/config
+    owner: root
+    group: root
+    mode: '0644'
+- name: Create sv dir
+  ansible.builtin.file:
+    path: /etc/sv/endlessh
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Create sv log dir
+  ansible.builtin.file:
+    path: /etc/sv/endlessh/log
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Copy log run
+  ansible.builtin.copy:
+    src: log_run
+    dest: /etc/sv/endlessh/log/run
+    owner: root
+    group: root
+    mode: '0755'
+- name: Copy sv run file
+  ansible.builtin.copy:
+    src: run
+    dest: /etc/sv/endlessh/run
+    owner: root
+    group: root
+    mode: '0755'
+- name: Copy metalog_endlessh.conf
+  ansible.builtin.copy:
+    src: metalog_endlessh.conf
+    dest: /etc/metalog.conf.d/metalog_endlessh.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [metalog]
+  notify: Reload metalog
+- name: Enable and start
+  community.general.runit:
+    name: endlessh
+    state: started
+    enabled: true

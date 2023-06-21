@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /bin/vlogger -p 'auth.info' -t 'endlessh'

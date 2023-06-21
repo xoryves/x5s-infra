@@ -1,0 +1,5 @@
+= endlessh Ansible role
+
+Put a copy of the `endlessh` binary into `files` folder.
+Original binary can be build from https://github.com/skeeto/endlessh[skeeto repo].
+My own fork exists at https://github.com/xoryves/endlessh[xoryves repo].
