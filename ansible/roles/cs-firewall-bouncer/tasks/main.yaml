@@ -1,0 +1,81 @@
+---
+- name: Copy crowdsec.nft template
+  ansible.builtin.template:
+    src: crowdsec.nft
+    dest: /etc/nftables/crowdsec.nft
+    owner: root
+    group: root
+    mode: '0644'
+- name: Create /opt/cs_fw_bouncer
+  ansible.builtin.file:
+    path: /opt/cs_fw_bouncer
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Download crowdsec-firewall-bouncer-amd64-static
+  ansible.builtin.unarchive:
+    src: "https://github.com/crowdsecurity/cs-firewall-bouncer/releases/download/v{{ cs_fw_bouncer.version }}/crowdsec-firewall-bouncer-amd64-static.tgz"
+    dest: /opt/cs_fw_bouncer
+    creates: "/opt/cs_fw_bouncer/{{ cs_fw_bouncer.version }}/crowdsec-firewall-bouncer"
+    extra_opts:
+      - "--one-top-level={{ cs_fw_bouncer.version }}"
+      - '--strip-components=1'
+    owner: root
+    group: root
+    remote_src: true
+- name: Symlink crowdsec-firewall-bouncer
+  ansible.builtin.file:
+    src: "/opt/cs_fw_bouncer/{{ cs_fw_bouncer.version }}/crowdsec-firewall-bouncer"
+    dest: /usr/local/bin/crowdsec-firewall-bouncer
+    state: link
+- name: Add cs-fw-bouncer
+  ansible.builtin.command:
+    cmd: "/usr/local/bin/cscli bouncers add cs-firewall-bouncer-{{ inventory_hostname }} -o raw"
+    creates: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+  register: cs_fw_bouncer_api_key
+- name: Set apikey fact
+  ansible.builtin.set_fact:
+    cs_fw_bouncer:
+      api_key: "{{ cs_fw_bouncer_api_key.stdout }}"
+  when: cs_fw_bouncer_api_key is defined
+- name: Copy crowdsec-firewall-bouncer.yaml template
+  ansible.builtin.template:
+    src: crowdsec-firewall-bouncer.yaml
+    dest: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  when: cs_fw_bouncer is defined and cs_fw_bouncer.api_key is defined
+- name: Create sv dir crowdsec-firewall-bouncer
+  ansible.builtin.file:
+    path: /etc/sv/crowdsec-firewall-bouncer
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Create sv log dir crowdsec-firewall-bouncer
+  ansible.builtin.file:
+    path: /etc/sv/crowdsec-firewall-bouncer/log
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Symlink vlogger crowdsec-firewall-bouncer
+  ansible.builtin.file:
+    src: /usr/bin/vlogger
+    dest: /etc/sv/crowdsec-firewall-bouncer/log/run
+    state: link
+- name: Copy sv run file crowdsec-firewall-bouncer
+  ansible.builtin.copy:
+    src: run
+    dest: /etc/sv/crowdsec-firewall-bouncer/run
+    owner: root
+    group: root
+    mode: '0755'
+- name: Enable and start crowdsec-firewall-bouncer
+  community.general.runit:
+    name: crowdsec-firewall-bouncer
+    state: started
+    enabled: true
