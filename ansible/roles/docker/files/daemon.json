@@ -1,0 +1,4 @@
+{
+  "log-driver": "local",
+  "storage-driver": "zfs"
+}
