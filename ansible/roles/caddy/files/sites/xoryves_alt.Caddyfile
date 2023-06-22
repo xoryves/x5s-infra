@@ -1,0 +1,12 @@
+xoryves.de {
+	root * /var/www/alt.xoryves.de
+	encode gzip
+	rewrite / /index.html
+	try_files {path} =404
+	file_server
+	import logging
+}
+
+https://xoryves.de:60443 {
+	import crowdsec_blocked
+}

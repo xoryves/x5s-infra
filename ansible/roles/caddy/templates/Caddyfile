@@ -1,0 +1,32 @@
+{
+	email "{{ caddy.email }}"
+	#acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+	log {
+		output file /var/log/caddy/global.log
+		format json {
+			time_format iso8601
+		}
+	}
+}
+
+(logging) {
+	log {
+		output file /var/log/caddy/access.log
+		format json {
+			time_format iso8601
+		}
+	}
+}
+
+import snippets/*.Caddyfile
+
+localhost:80 {
+	@denied not remote_ip private_ranges
+	abort @denied
+	respond /health-check 200
+	respond /hello "hello"
+	respond 404
+	import logging
+}
+
+import sites/*.Caddyfile

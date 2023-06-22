@@ -1,0 +1,14 @@
+diceware.xoryves.de {
+	root * /var/www/diceware
+	encode gzip
+	rewrite / /index.html
+	try_files {path} =404
+	file_server {
+		hide node_modules_
+	}
+	import logging
+}
+
+https://diceware.xoryves.de:60443 {
+	import crowdsec_blocked
+}

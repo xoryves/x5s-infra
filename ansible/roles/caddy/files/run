@@ -1,0 +1,8 @@
+#!/bin/sh
+exec 2>&1
+BIN=/usr/local/bin/caddy
+CONF=/etc/caddy
+ENVDIR=/etc/sv/caddy/envdir
+cd $CONF
+env -i chpst -u caddy:caddy -e $ENVDIR $BIN validate || exit $?
+exec env -i chpst -u caddy:caddy -e $ENVDIR $BIN run

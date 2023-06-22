@@ -1,0 +1,14 @@
+(crowdsec_blocked) {
+	root * /var/www/templates
+	error * "Blocked by CrowdSec" 403
+	handle_errors {
+		rewrite * /crowdsec_blocked.html
+		templates
+		file_server
+		header {
+			Cache-Control max-age=3600, must-revalidate
+		}
+	}
+	encode gzip
+	import logging
+}

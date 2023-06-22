@@ -1,0 +1,156 @@
+---
+- name: Base
+  tags: [caddy_base]
+  block:
+    - name: Create group
+      ansible.builtin.group:
+        name: caddy
+        system: true
+    - name: Create user
+      ansible.builtin.user:
+        name: caddy
+        comment: Caddy web server
+        group: caddy
+        home: /var/lib/caddy
+        create_home: false
+        system: true
+    - name: Create zfs dataset
+      community.general.zfs:
+        name: zroot/var/lib/caddy
+        state: present
+    - name: Create/Set lib/log dir permissions
+      ansible.builtin.file:
+        path: "/var/{{ item }}/caddy"
+        owner: caddy
+        group: caddy
+        mode: '0750'
+        state: directory
+      loop:
+        - lib
+        - log
+    - name: Create conf/opt dir
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /etc/caddy
+        - /etc/caddy/sites
+        - /etc/caddy/snippets
+        - /opt/caddy
+
+# Configuration
+- name: Configuration
+  tags: [caddy_config]
+  block:
+    - name: Copy Caddyfile
+      ansible.builtin.template:
+        dest: /etc/caddy/Caddyfile
+        src: Caddyfile
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload caddy
+    - name: Copy snippet crowdsec_blocked
+      ansible.builtin.copy:
+        dest: /etc/caddy/snippets/crowdsec_blocked.Caddyfile
+        src: snippets/crowdsec_blocked.Caddyfile
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload caddy
+    - name: Copy site {{ item }}
+      ansible.builtin.copy:
+        dest: /etc/caddy/sites/{{ item }}.Caddyfile
+        src: sites/{{ item }}.Caddyfile
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - diceware
+        - xoryves_alt
+      notify: Reload caddy
+
+# Install caddy
+- name: Install
+  tags: [caddy_install]
+  block:
+    - name: Download caddy
+      ansible.builtin.unarchive:
+        src: "https://github.com/caddyserver/caddy/releases/download/v{{ caddy.version }}/caddy_{{ caddy.version }}_linux_amd64.tar.gz"
+        dest: /opt/caddy
+        creates: "/opt/caddy/{{ caddy.version }}/caddy"
+        extra_opts:
+          - "--one-top-level={{ caddy.version }}"
+        owner: root
+        group: root
+        remote_src: true
+    - name: Setcap cap_net_bind_service
+      community.general.capabilities:
+        path: "/opt/caddy/{{ caddy.version }}/caddy"
+        capability: cap_net_bind_service=+ep
+    - name: Symlink caddy
+      ansible.builtin.file:
+        dest: /usr/local/bin/caddy
+        src: "/opt/caddy/{{ caddy.version }}/caddy"
+        state: link
+
+# runit
+- name: Runit
+  tags: [caddy_runit]
+  block:
+    - name: Create sv dirs
+      ansible.builtin.file:
+        path: "/etc/sv/caddy/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - ''
+        - control
+        - log
+        - envdir
+    - name: Symlink vlogger
+      ansible.builtin.file:
+        src: /usr/bin/vlogger
+        dest: /etc/sv/caddy/log/run
+        state: link
+    - name: Copy envdir/HOME file
+      ansible.builtin.copy:
+        dest: /etc/sv/caddy/envdir/HOME
+        content: "/var/lib/caddy\n"
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy envdir/{XDG_CONFIG_HOME,XDG_DATA_HOME} file
+      ansible.builtin.copy:
+        dest: "/etc/sv/caddy/envdir/{{ item }}"
+        content: "/var/lib\n"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - XDG_CONFIG_HOME
+        - XDG_DATA_HOME
+    - name: Copy run file
+      ansible.builtin.copy:
+        dest: /etc/sv/caddy/run
+        src: run
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Copy h file
+      ansible.builtin.copy:
+        dest: /etc/sv/caddy/control/h
+        src: h
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Enable and start
+      community.general.runit:
+        name: caddy
+        state: started
+        enabled: true
