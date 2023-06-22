@@ -1,0 +1,5 @@
+#!/bin/sh
+exec 2>&1
+CS_BIN=/usr/local/bin/crowdsec
+$CS_BIN -c /etc/crowdsec/config.yaml -t || exit $?
+exec $CS_BIN -c /etc/crowdsec/config.yaml

@@ -1,0 +1,181 @@
+---
+- name: Create crowdsec dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /etc/crowdsec
+    - /etc/crowdsec/bouncers
+    - /etc/crowdsec/collections
+    - /etc/crowdsec/hub
+    - /etc/crowdsec/patterns
+    - /etc/crowdsec/postoverflows
+    - /etc/crowdsec/scenarios
+    - /opt/crowdsec
+    - /usr/local/lib/crowdsec/plugins
+    - /var/lib/crowdsec/data
+
+- name: Create crowdsec plugin group
+  ansible.builtin.group:
+    name: "{{ crowdsec_plugin_group }}"
+    system: true
+- name: Create crowdsec plugin user
+  ansible.builtin.user:
+    name: "{{ crowdsec_plugin_user }}"
+    group: "{{ crowdsec_plugin_group }}"
+    shell: /sbin/nologin
+    home: /tmp
+    create_home: false
+    system: true
+
+- name: Download crowdsec-static
+  ansible.builtin.unarchive:
+    src: "https://github.com/crowdsecurity/crowdsec/releases/download/v{{ crowdsec.version }}/crowdsec-release-static.tgz"
+    dest: /opt/crowdsec
+    creates: "/opt/crowdsec/{{ crowdsec.version }}/cmd/crowdsec/crowdsec"
+    extra_opts:
+      - "--one-top-level={{ crowdsec.version }}"
+      - '--strip-components=1'
+    owner: root
+    group: root
+    remote_src: true
+- name: Symlink crowdsec
+  ansible.builtin.file:
+    src: "/opt/crowdsec/{{ crowdsec.version }}/cmd/crowdsec/crowdsec"
+    dest: /usr/local/bin/crowdsec
+    state: link
+- name: Symlink cscli
+  ansible.builtin.file:
+    src: "/opt/crowdsec/{{ crowdsec.version }}/cmd/crowdsec-cli/cscli"
+    dest: /usr/local/bin/cscli
+    state: link
+- name: Symlink plugins
+  ansible.builtin.file:
+    src: "/opt/crowdsec/{{ crowdsec.version }}/plugins/notifications/{{ item }}/notification-{{ item }}"
+    dest: "/usr/local/lib/crowdsec/plugins/notification-{{ item }}"
+    state: link
+  loop:
+    - email
+    - http
+    - slack
+    - splunk
+
+- name: Copy configuration
+  ansible.builtin.copy:
+    src: "{{ item }}.yaml"
+    dest: "/etc/crowdsec/{{ item }}.yaml"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - acquis
+    - console
+    - profiles
+    - simulation
+- name: Copy template configuration
+  ansible.builtin.template:
+    src: config.yaml
+    dest: "/etc/crowdsec/config.yaml"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create sv dir
+  ansible.builtin.file:
+    path: /etc/sv/crowdsec
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Create sv log dir
+  ansible.builtin.file:
+    path: /etc/sv/crowdsec/log
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Symlink vlogger
+  ansible.builtin.file:
+    src: /usr/bin/vlogger
+    dest: /etc/sv/crowdsec/log/run
+    state: link
+- name: Copy sv run file
+  ansible.builtin.copy:
+    src: run
+    dest: /etc/sv/crowdsec/run
+    owner: root
+    group: root
+    mode: '0755'
+- name: Enable and start
+  community.general.runit:
+    name: crowdsec
+    state: started
+    enabled: true
+
+- name: Update hub
+  ansible.builtin.command:
+    cmd: /usr/local/bin/cscli hub update
+  changed_when: false
+# lapi
+- name: Check if local_api_credentials.yaml exists
+  ansible.builtin.stat:
+    path: /etc/crowdsec/local_api_credentials.yaml
+  register: lapi_stats
+- name: Create /etc/crowdsec/local_api_credentials.yaml
+  ansible.builtin.file:
+    path: /etc/crowdsec/local_api_credentials.yaml
+    state: touch
+    owner: root
+    group: root
+    mode: '0600'
+  when: not lapi_stats.stat.exists
+- name: Add local machine
+  ansible.builtin.command:
+    cmd: /usr/local/bin/cscli machines add -a -u http://127.0.0.1:8080
+  when: not lapi_stats.stat.exists
+# capi
+- name: Check if online_api_credentials.yaml exists
+  ansible.builtin.stat:
+    path: /etc/crowdsec/online_api_credentials.yaml
+  register: capi_stats
+- name: Create /etc/crowdsec/online_api_credentials.yaml
+  ansible.builtin.file:
+    path: /etc/crowdsec/online_api_credentials.yaml
+    state: touch
+    owner: root
+    group: root
+    mode: '0600'
+  when: not capi_stats.stat.exists
+- name: Register to capi
+  ansible.builtin.command:
+    cmd: /usr/local/bin/cscli capi register
+  when: not capi_stats.stat.exists
+# collections, scenarios, parsers
+- name: Install collections
+  ansible.builtin.command:
+    cmd: "/usr/local/bin/cscli collections install crowdsecurity/{{ item }}"
+    creates: "/etc/crowdsec/collections/{{ item }}.yaml"
+  loop:
+    - base-http-scenarios
+    - endlessh
+    - http-cve
+    - linux
+    - sshd
+  tags: [crowdsec_collections]
+- name: Copy endlessh-slow-bf scenario
+  ansible.builtin.copy:
+    src: scenarios/endlessh-slow-bf.yaml
+    dest: /etc/crowdsec/scenarios/endlessh-slow-bf.yaml
+    owner: root
+    group: root
+    mode: '0644'
+- name: Copy caddy-logs parser
+  ansible.builtin.copy:
+    src: parsers/s01-parse/caddy-logs.yaml
+    dest: /etc/crowdsec/parsers/s01-parse/caddy-logs.yaml
+    owner: root
+    group: root
+    mode: '0644'

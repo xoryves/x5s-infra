@@ -1,0 +1,48 @@
+# original from https://github.com/crowdsecurity/hub/blob/master/parsers/s01-parse/crowdsecurity/caddy-logs.yaml
+filter: "evt.Parsed.program startsWith 'caddy'"
+onsuccess: next_stage
+# debug: true
+name: xoryves/caddy-logs
+description: "Parse caddy logs"
+nodes:
+  - nodes:
+    - grok:
+        pattern: '%{TIMESTAMP_ISO8601:timestamp}'
+        expression: JsonExtract(evt.Line.Raw, 'ts')
+        statics:
+          - target: evt.StrTime
+            expression: evt.Parsed.timestamp
+    - grok:
+        pattern: '%{IPORHOST:remote_addr}:%{NUMBER}'
+        expression: JsonExtract(evt.Line.Raw, "request.remote_addr")
+    - grok:
+        pattern: '%{IPORHOST:remote_ip}'
+        expression: JsonExtract(evt.Line.Raw, "request.remote_ip")
+    - grok:
+        pattern: '\["%{NOTDQUOTE:http_user_agent}\"]'
+        expression: JsonExtract(evt.Line.Raw, "request.headers.User-Agent")
+statics:
+  - meta: log_type
+    value: http_access-log
+  - meta: service
+    value: http
+  - meta: source_ip
+    expression: evt.Parsed.remote_addr
+  - meta: source_ip
+    expression: evt.Parsed.remote_ip
+  - meta: http_status
+    expression: JsonExtract(evt.Line.Raw, "status")
+  - meta: http_path
+    expression: JsonExtract(evt.Line.Raw, "request.uri")
+  - target: evt.Parsed.request #Add for http-logs enricher
+    expression: JsonExtract(evt.Line.Raw, "request.uri")
+  - parsed: verb
+    expression: JsonExtract(evt.Line.Raw, "request.method")
+  - meta: http_verb
+    expression: JsonExtract(evt.Line.Raw, "request.method")
+  - meta: http_user_agent
+    expression: evt.Parsed.http_user_agent
+  - meta: target_fqdn
+    expression: JsonExtract(evt.Line.Raw, "request.host")
+  - meta: sub_type
+    expression: "JsonExtract(evt.Line.Raw, 'status') == '401' && JsonExtract(evt.Line.Raw, 'request.headers.Authorization[0]') startsWith 'Basic ' ? 'auth_fail' : ''"

@@ -1,0 +1,15 @@
+---
+filenames:
+  - /var/log/sshd/current
+labels:
+  type: sshd
+---
+filenames:
+  - /var/log/endlessh/current
+labels:
+  type: endlessh
+---
+filenames:
+  - /var/log/caddy/*.log
+labels:
+  type: caddy

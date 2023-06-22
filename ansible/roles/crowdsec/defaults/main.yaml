@@ -1,0 +1,3 @@
+---
+crowdsec_plugin_user: crowdsec-plugin
+crowdsec_plugin_group: crowdsec-plugin

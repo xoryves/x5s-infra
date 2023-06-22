@@ -1,0 +1,16 @@
+# endlessh bruteforce
+type: leaky
+name: xoryves/endlessh-slow-bf
+description: "Detect slow SSH bruteforce caught by Endlessh"
+filter: "evt.Meta.log_type == 'endlessh_accept'"
+leakspeed: "60m"
+references:
+  - http://wikipedia.com/ssh-bf-is-bad
+capacity: 3
+groupby: evt.Meta.source_ip
+blackhole: 120m
+reprocess: true
+labels:
+ service: endlessh
+ type: bruteforce
+ remediation: true

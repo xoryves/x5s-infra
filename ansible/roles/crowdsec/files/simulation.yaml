@@ -1,0 +1,5 @@
+simulation: off
+#exclusions:
+  #- crowdsecurity/ssh-bf
+  #- crowdsecurity/endlessh-bf
+  #- xoryves/endlessh-slow-bf
