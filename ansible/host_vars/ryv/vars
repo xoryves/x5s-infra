@@ -1,0 +1,18 @@
+---
+crowdsec:
+  version: "{{ vault_crowdsec_version }}"
+  nat:
+    enable: true
+    http_port: 60080
+    https_port: 60443
+cs_fw_bouncer:
+  version: "{{ vault_cs_fw_bouncer_version }}"
+endlessh:
+  git_version: "{{ vault_endlessh_git_version }}"
+caddy:
+  version: "{{ vault_caddy_version }}"
+  email: "{{ vault_caddy_email }}"
+vaultwarden:
+  domain: "{{ vault_vaultwarden_domain }}"
+  subdir: "{{ vault_vaultwarden_subdir }}"
+  version: "{{ vault_vaultwarden_version }}"
