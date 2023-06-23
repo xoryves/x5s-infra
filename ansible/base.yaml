@@ -1,0 +1,13 @@
+---
+- name: Base configuration
+  hosts: ryv
+  roles:
+    - common
+    - metalog
+    - sshd
+    - nftables
+    - endlessh
+    - crowdsec
+    - cs-firewall-bouncer
+    - docker
+    - caddy
