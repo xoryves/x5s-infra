@@ -40,6 +40,20 @@
         - /etc/caddy/sites
         - /etc/caddy/snippets
         - /opt/caddy
+    - name: Create template dir
+      ansible.builtin.file:
+        path: /var/www/templates
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Copy crowdsec_blocked template
+      ansible.builtin.copy:
+        dest: /var/www/templates/crowdsec_blocked.html
+        src: crowdsec_blocked.html
+        owner: root
+        group: root
+        mode: '0644'
 
 # Configuration
 - name: Configuration

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <article lang=de>
+      <p>Der Zugriff auf "{{.Host}}" von der IP "{{.RemoteIP}}" wurde durch CrowdSec geblockt.</p>
+      <p>Die IP könnte auf <a href="https://www.crowdsec.net/remove-ip-crowdsec-blocklist">CrowdSec's blocklist</a> gelistet sein.</p>
+      <p>Oder CrowdSec hat schadhafte Zugriffsversuche von der IP erkannt und die IP für bis zu vier Stunden geblockt.</p>
+    </article>
+    <article lang=en>
+      <p>CrowdSec blocked your IP "{{.RemoteIP}}" from accessing "{{.Host}}".</p>
+      <p>Your IP could be on <a href="https://www.crowdsec.net/remove-ip-crowdsec-blocklist">CrowdSec's blocklist</a>.</p>
+      <p>Or CrowdSec detected malicious behaviour from your IP and blocked you for up to four hours.</p>
+    </article>
+  </body>
+</html>
